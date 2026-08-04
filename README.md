@@ -4,22 +4,25 @@ An R package with a local Shiny GUI for selecting transcript-derived transcripti
 
 ## Install and run
 
-Install the required packages in R:
-
 ```r
-install.packages(c("BiocManager", "shiny", "bslib", "testthat"))
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
 BiocManager::install(c(
-  "rtracklayer",
-  "GenomicRanges",
-  "IRanges",
-  "Biostrings",
-  "Rsamtools"
+    "rtracklayer",
+    "GenomicRanges",
+    "IRanges",
+    "Biostrings",
+    "Rsamtools",
+    "shiny",
+    "bslib"
 ))
 ```
-
 Install the package from the project directory:
 
 ```bash
+git clone https://github.com/SaraGoodlab/promoterPrimerMapper.git
+cd promoterPrimerMapper
 R CMD INSTALL .
 ```
 
@@ -79,7 +82,8 @@ The TSS is defined as the transcript start on `+` and transcript end on `-`. Tra
 Run from the package root:
 
 ```r
-devtools::test()
+install.packages("testthat")
+testthat::test_local()
 ```
 
 The synthetic GTF and FASTA under `inst/extdata/` are used by the automated integration test.

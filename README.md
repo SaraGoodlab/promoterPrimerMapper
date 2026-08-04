@@ -37,37 +37,19 @@ For a published GitHub Release, install the Bioconductor dependencies first, the
 R CMD INSTALL promoterPrimerMapper_0.1.0.tar.gz
 ```
 
-Alternatively, after replacing `<OWNER>/<REPOSITORY>` with the GitHub repository path:
+Alternatively, with the GitHub repository path:
 
 ```r
 install.packages("remotes")
 remotes::install_url(
-  "https://github.com/<OWNER>/<REPOSITORY>/releases/download/v0.1.0/promoterPrimerMapper_0.1.0.tar.gz",
+  "https://github.com/SaraGoodlab/promoterPrimerMapper/releases/download/v0.1.0/promoterPrimerMapper_0.1.0.tar.gz",
   dependencies = FALSE
 )
 promoterPrimerMapper::run_app()
 ```
-
-Maintainers can build and validate the release asset locally with:
-
-```bash
-R CMD build .
-R CMD check promoterPrimerMapper_0.1.0.tar.gz
-```
-
-Create the GitHub Release as tag `v0.1.0` and attach the resulting `.tar.gz` file.
-This repository also includes a GitHub Actions workflow at `.github/workflows/release.yml`; after pushing tag `v0.1.0`, it builds the tarball and creates the release automatically:
-
-```bash
-git add .
-git commit -m "Prepare v0.1.0 release"
-git tag v0.1.0
-git push origin main --tags
-```
-
+## Required inputs
 The GUI requires paths to a GTF file, FASTA file, and pre-generated FASTA `.fai` index.
-
-Primer coordinates are mapped without sequence alignment. Mapping uses the extracted sequence coordinates, genomic extraction interval, strand, and primer `Start` and `Size`.
+Primer coordinates are mapped to the reference with the extracted sequence coordinates, genomic extraction interval, strand, and primer `Start` and `Size`.
 
 After extraction, four FASTA outputs are available:
 

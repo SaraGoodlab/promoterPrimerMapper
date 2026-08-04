@@ -1,0 +1,7 @@
+scaffold1	synthetic	gene	40	90	.	+	.	gene_id "geneA"; gene_name "Gene A";
+scaffold1	synthetic	transcript	50	70	.	+	.	gene_id "geneA"; gene_name "Gene A"; transcript_id "txA1";
+scaffold1	synthetic	transcript	50	75	.	+	.	gene_id "geneA"; gene_name "Gene A"; transcript_id "txA2";
+scaffold1	synthetic	transcript	55	80	.	+	.	gene_id "geneA"; gene_name "Gene A"; transcript_id "txA3";
+scaffold1	synthetic	gene	60	95	.	-	.	gene_id "geneB"; gene_name "Gene B";
+scaffold1	synthetic	transcript	70	80	.	-	.	gene_id "geneB"; gene_name "Gene B"; transcript_id "txB1";
+scaffold1	synthetic	transcript	65	80	.	-	.	gene_id "geneB"; gene_name "Gene B"; transcript_id "txB2";

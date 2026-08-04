@@ -1,0 +1,23 @@
+Package: promoterPrimerMapper
+Type: Package
+Title: TSS-Based Promoter Extraction and Primer Coordinate Remapping
+Version: 0.1.0
+Authors@R: person("Ilya", "Kisselev", email = "kisselev.iy@gmail.com", role = c("aut", "cre"))
+Description: Provides transcript-boundary based transcription start site selection,
+    transcription-oriented promoter sequence extraction, and mathematical remapping
+    of primer coordinates to genomic reference coordinates.
+License: GPL-3 + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports:
+    Biostrings,
+    GenomicRanges,
+    IRanges,
+    Rsamtools,
+    rtracklayer,
+    shiny,
+    bslib
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

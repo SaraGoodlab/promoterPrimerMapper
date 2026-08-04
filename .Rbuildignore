@@ -1,0 +1,8 @@
+^\.git$
+^\.agents$
+^\.codex$
+^\.github$
+^dist$
+^implementation_specs\.md$
+^app\.R$
+^\.Rbuildignore$

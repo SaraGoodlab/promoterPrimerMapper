@@ -32,7 +32,7 @@ Then launch the GUI in R:
 promoterPrimerMapper::run_app()
 ```
 
-## GitHub release installation
+### GitHub release installation
 
 For a published GitHub Release, install the Bioconductor dependencies first, then download the release asset named `promoterPrimerMapper_0.1.0.tar.gz` and install it locally:
 

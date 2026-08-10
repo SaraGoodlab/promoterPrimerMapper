@@ -10,8 +10,12 @@ parse_primer_output(text)
 \item{text}{Character scalar containing pasted output.}
 }
 \value{
-A data frame with \code{primer_type}, \code{start}, and \code{size}.
+A data frame with \code{primer_type}, \code{start}, \code{size}, and \code{sequence}; the
+reported product size, if any, is stored in \code{attr(, "product_size")}.
 }
 \description{
-Parse primer start and size values from pasted primer-tool output.
+Rows must start with a \code{Left}/\code{Right} (or \code{Forward}/\code{Reverse}) label followed
+by Start and Size. A primer sequence column (the last token, when its length
+equals Size) and a \verb{Product size: N} line are captured when present so the
+mapping can be verified.
 }

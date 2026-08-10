@@ -7,18 +7,41 @@
 map_primer_coordinates(
   primers,
   extracted_sequence,
-  start_convention = c("one-based", "zero-based")
+  start_convention = c("one-based", "zero-based"),
+  right_start = c("five-prime", "leftmost"),
+  sequence_variant = c("requested", "complementary", "bisulfite_requested",
+    "bisulfite_complementary"),
+  product_size = attr(primers, "product_size")
 )
 }
 \arguments{
-\item{primers}{Data frame with \code{primer_type}, \code{start}, and \code{size}, or one such row as a list.}
+\item{primers}{Data frame with \code{primer_type}, \code{start}, and \code{size} (and
+optionally \code{sequence}), or one such row as a list.}
 
 \item{extracted_sequence}{A \code{promoter_sequence} object.}
 
 \item{start_convention}{External convention: \code{one-based} or \code{zero-based}.}
+
+\item{right_start}{How the tool reports right/reverse primer starts:
+\code{five-prime} (Primer3, MethPrimer: the primer's 5' end, i.e. its highest
+position) or \code{leftmost}.}
+
+\item{sequence_variant}{The \code{\link[=sequence_variants]{sequence_variants()}} entry the primers were
+designed on. Positions on the complementary variants are flipped back to
+transcription orientation before mapping.}
+
+\item{product_size}{Product size reported by the primer tool; when supplied
+the mapped amplicon length must agree. Defaults to the value captured by
+\code{\link[=parse_primer_output]{parse_primer_output()}}.}
 }
 \value{
-A data frame containing relative and genomic intervals.
+A data frame containing relative and genomic intervals. \verb{relative_*}
+positions are in the coordinates of \code{sequence_variant}. \code{binding_strand} is
+the genomic strand whose 5'->3' sequence the primer reproduces (the primer
+anneals to the opposite strand); \code{assay_strand} is the original genomic
+strand used as template (\code{OT} = original top/+, \code{OB} = original bottom/-).
+\code{sequence_match} reports whether a pasted primer sequence matches the
+template at the mapped position.
 }
 \description{
 Map primer rows to genomic coordinates without sequence alignment.

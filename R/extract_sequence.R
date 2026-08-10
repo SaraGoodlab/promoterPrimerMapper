@@ -1,7 +1,5 @@
 reverse_complement_text <- function(sequence) {
-  if (requireNamespace("Biostrings", quietly = TRUE)) return(as.character(Biostrings::reverseComplement(Biostrings::DNAString(sequence))))
-  chars <- strsplit(toupper(sequence), "", fixed = TRUE)[[1L]]
-  paste(rev(strsplit(chartr("ACGTN", "TGCAN", paste(chars, collapse = "")), "", fixed = TRUE)[[1L]]), collapse = "")
+  as.character(Biostrings::reverseComplement(Biostrings::DNAStringSet(sequence)), use.names = FALSE)
 }
 
 reference_sequence <- function(reference, scaffold, region_start, region_end) {
@@ -104,17 +102,23 @@ fasta_header <- function(extracted_sequence) {
 
 #' Convert a sequence to its bisulfite-treated representation.
 #'
-#' This models conversion of unmethylated cytosines as `C -> T`. Methylation
-#' status is not available from the reference FASTA, so all cytosines are
-#' converted.
+#' Bisulfite converts unmethylated cytosines to uracil, read as `T` after PCR.
+#' Methylation status is not available from the reference FASTA, so the
+#' conversion is modelled under one of two assumptions.
 #' @param sequence DNA sequence.
+#' @param cpg `unmethylated` converts every `C` (the default); `methylated`
+#'   keeps the `C` of each CpG dinucleotide and converts all other cytosines.
 #' @return Uppercase bisulfite-treated sequence.
 #' @export
-bisulfite_convert <- function(sequence) {
+bisulfite_convert <- function(sequence, cpg = c("unmethylated", "methylated")) {
+  cpg <- match.arg(cpg)
   if (length(sequence) != 1L || is.na(sequence) || !nzchar(sequence)) {
     stop("sequence must be one non-empty DNA sequence.", call. = FALSE)
   }
-  chartr("C", "T", toupper(as.character(sequence)))
+  sequence <- toupper(as.character(sequence))
+  if (cpg == "unmethylated") return(chartr("C", "T", sequence))
+  # CpG matches never overlap, so a placeholder protects every CpG cytosine.
+  chartr("x", "C", chartr("C", "T", gsub("CG", "xG", sequence, fixed = TRUE)))
 }
 
 #' Generate the four sequence FASTA variants.

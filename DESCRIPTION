@@ -3,6 +3,8 @@ Type: Package
 Title: TSS-Based Promoter Extraction and Primer Coordinate Remapping
 Version: 0.1.0
 Authors@R: person("Ilya", "Kisselev", email = "kisselev.iy@gmail.com", role = c("aut", "cre"))
+Author: Ilya Kisselev [aut]
+Maintainer: Ilya Kisselev <kisselev.iy@gmail.com>
 Description: Provides transcript-boundary based transcription start site selection,
     transcription-oriented promoter sequence extraction, and mathematical remapping
     of primer coordinates to genomic reference coordinates.

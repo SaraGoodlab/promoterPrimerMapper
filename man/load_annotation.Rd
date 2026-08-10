@@ -4,10 +4,14 @@
 \alias{load_annotation}
 \title{Import a GTF annotation.}
 \usage{
-load_annotation(path)
+load_annotation(path, feature_types = c("gene", transcript_feature_types))
 }
 \arguments{
 \item{path}{Path to a GTF/GFF file. Compressed input supported by rtracklayer.}
+
+\item{feature_types}{Feature types to import. Only gene and transcript
+records are needed for TSS selection, so other features are skipped to
+save time and memory. Use \code{NULL} to import everything.}
 }
 \value{
 A GRanges object imported by rtracklayer.

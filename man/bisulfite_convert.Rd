@@ -4,16 +4,19 @@
 \alias{bisulfite_convert}
 \title{Convert a sequence to its bisulfite-treated representation.}
 \usage{
-bisulfite_convert(sequence)
+bisulfite_convert(sequence, cpg = c("unmethylated", "methylated"))
 }
 \arguments{
 \item{sequence}{DNA sequence.}
+
+\item{cpg}{\code{unmethylated} converts every \code{C} (the default); \code{methylated}
+keeps the \code{C} of each CpG dinucleotide and converts all other cytosines.}
 }
 \value{
 Uppercase bisulfite-treated sequence.
 }
 \description{
-This models conversion of unmethylated cytosines as \code{C -> T}. Methylation
-status is not available from the reference FASTA, so all cytosines are
-converted.
+Bisulfite converts unmethylated cytosines to uracil, read as \code{T} after PCR.
+Methylation status is not available from the reference FASTA, so the
+conversion is modelled under one of two assumptions.
 }

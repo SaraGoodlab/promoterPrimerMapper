@@ -1,0 +1,5 @@
+chrDemo1	synthetic	gene	3001	5800	.	+	.	gene_id "BSPPLUS"; gene_name "BSPPLUS";
+chrDemo1	synthetic	transcript	3001	5800	.	+	.	gene_id "BSPPLUS"; gene_name "BSPPLUS"; transcript_id "BSPPLUS-201";
+chrDemo1	synthetic	transcript	3001	4900	.	+	.	gene_id "BSPPLUS"; gene_name "BSPPLUS"; transcript_id "BSPPLUS-202";
+chrDemo2	synthetic	gene	300	2500	.	-	.	gene_id "BSPMINUS"; gene_name "BSPMINUS";
+chrDemo2	synthetic	transcript	300	2500	.	-	.	gene_id "BSPMINUS"; gene_name "BSPMINUS"; transcript_id "BSPMINUS-201";

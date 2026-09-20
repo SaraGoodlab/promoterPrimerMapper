@@ -1,0 +1,75 @@
+Bootstrap: docker
+From: condaforge/miniforge3:26.7.2-0
+
+# Build from the repository root:
+#   apptainer build --fakeroot promoterPrimerMapper.sif container/promoterPrimerMapper.def
+
+%labels
+    org.opencontainers.image.title promoterPrimerMapper
+    org.opencontainers.image.description Bisulfite-sequencing PCR primer design for gene promoters
+    org.opencontainers.image.source https://github.com/SaraGoodlab/promoterPrimerMapper
+
+%help
+    Promoter Primer Mapper: BSP primer design with a Shiny GUI.
+
+    Start the GUI (listens on 127.0.0.1:3838 by default):
+        apptainer run --bind /path/to/genomes promoterPrimerMapper.sif
+        apptainer run promoterPrimerMapper.sif --port 4000
+
+    Then open http://127.0.0.1:3838 in a browser. On a remote node, forward the
+    port over SSH first, e.g. ssh -L 3838:127.0.0.1:3838 user@node.
+
+    Reference files are opened by path, so bind every directory that holds
+    them (--bind). The image also provides primer3_core, bowtie2 and Bismark:
+        apptainer exec promoterPrimerMapper.sif bismark_genome_preparation --bowtie2 /path/to/genome_folder
+        apptainer exec promoterPrimerMapper.sif Rscript script.R
+
+    Run the bundled test suite:
+        apptainer test promoterPrimerMapper.sif
+
+%files
+    container/environment.yml /opt/promoterPrimerMapper/environment.yml
+    DESCRIPTION /opt/promoterPrimerMapper/src/
+    NAMESPACE /opt/promoterPrimerMapper/src/
+    LICENSE /opt/promoterPrimerMapper/src/
+    R /opt/promoterPrimerMapper/src/
+    man /opt/promoterPrimerMapper/src/
+    inst /opt/promoterPrimerMapper/src/
+    tests /opt/promoterPrimerMapper/src/
+
+%post
+    set -eu
+    mamba env create --yes --prefix /opt/env --file /opt/promoterPrimerMapper/environment.yml
+    mamba clean --all --yes
+    /opt/env/bin/R CMD INSTALL --no-docs /opt/promoterPrimerMapper/src
+    /opt/env/bin/Rscript --vanilla -e 'cat("promoterPrimerMapper", as.character(packageVersion("promoterPrimerMapper")), "installed\n")'
+
+%environment
+    export PATH=/opt/env/bin:$PATH
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    # Keep host R libraries out of the container's R.
+    export R_LIBS=
+    export R_LIBS_USER=/opt/env/no-user-library
+
+%runscript
+    port="${PPM_PORT:-3838}"
+    host="${PPM_HOST:-127.0.0.1}"
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --port) port="$2"; shift 2 ;;
+            --host) host="$2"; shift 2 ;;
+            *) echo "Unknown argument: $1 (use --port N and/or --host ADDRESS)" >&2; exit 2 ;;
+        esac
+    done
+    case "$port" in
+        ''|*[!0-9]*) echo "Port must be a number: $port" >&2; exit 2 ;;
+    esac
+    echo "Promoter Primer Mapper: open http://${host}:${port} (forward the port over SSH when running on a remote node)"
+    export PPM_HOST="$host" PPM_PORT="$port"
+    exec Rscript --vanilla -e 'promoterPrimerMapper::run_app(host = Sys.getenv("PPM_HOST"), port = as.integer(Sys.getenv("PPM_PORT")), launch.browser = FALSE)'
+
+%test
+    set -eu
+    cd /tmp
+    Rscript --vanilla -e 'testthat::test_dir("/opt/promoterPrimerMapper/src/tests/testthat", package = "promoterPrimerMapper", load_package = "installed", reporter = "summary", stop_on_failure = TRUE)'

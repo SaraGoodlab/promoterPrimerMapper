@@ -1,0 +1,19 @@
+# Runtime environment for the Apptainer image: R with the package's
+# dependencies plus the external tools used for design and specificity.
+name: promoterprimermapper
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.5
+  - r-shiny
+  - r-bslib
+  - r-testthat
+  - bioconductor-biostrings
+  - bioconductor-genomicranges
+  - bioconductor-iranges
+  - bioconductor-rsamtools
+  - bioconductor-rtracklayer
+  - primer3=2.6
+  - bowtie2=2.5
+  - bismark=3.1

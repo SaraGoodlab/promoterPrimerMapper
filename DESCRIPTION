@@ -1,24 +1,34 @@
 Package: promoterPrimerMapper
 Type: Package
-Title: TSS-Based Promoter Extraction and Primer Coordinate Remapping
-Version: 0.1.0
+Title: Bisulfite-Sequencing PCR Primer Design for Gene Promoters
+Version: 0.2.0
 Authors@R: person("Ilya", "Kisselev", email = "kisselev.iy@gmail.com", role = c("aut", "cre"))
 Author: Ilya Kisselev [aut]
 Maintainer: Ilya Kisselev <kisselev.iy@gmail.com>
-Description: Provides transcript-boundary based transcription start site selection,
-    transcription-oriented promoter sequence extraction, and mathematical remapping
-    of primer coordinates to genomic reference coordinates.
+Description: Selects transcription start sites from transcript annotation,
+    extracts transcription-oriented promoter sequence, and designs
+    bisulfite-sequencing PCR (BSP) primers: candidates are enumerated on the
+    bisulfite-converted template under bisulfite-specific rules, scored with
+    Primer3, paired around a TSS-relative target, and checked for off-target
+    products against a Bismark-prepared converted genome with Bowtie2. Primers
+    from external tools such as MethPrimer can be mapped back to genomic
+    coordinates. Includes a local Shiny interface.
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
+SystemRequirements: Primer3 (>= 2.5.0) for primer design; Bowtie2 and
+    Bismark (optional) for the specificity check.
 Imports:
     Biostrings,
     GenomicRanges,
+    graphics,
     IRanges,
     Rsamtools,
     rtracklayer,
     shiny,
-    bslib
+    bslib,
+    stats,
+    utils
 Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

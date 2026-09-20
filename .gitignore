@@ -5,3 +5,4 @@
 *.Rcheck/
 dist/
 *.tar.gz
+*.sif

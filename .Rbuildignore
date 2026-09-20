@@ -6,3 +6,6 @@
 ^implementation_specs\.md$
 ^app\.R$
 ^\.Rbuildignore$
+^data-raw$
+^container$
+\.sif$

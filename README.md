@@ -2,96 +2,145 @@
 
 An R package with a local Shiny GUI for designing **bisulfite-sequencing PCR (BSP)** primers for gene promoters. It selects transcript-derived transcription start sites (TSSs) and extracts a transcription-oriented promoter sequence. An interactive CpG map shows the promoter's CpG sites and CpG islands. The app designs ranked BSP primer pairs on the bisulfite-converted template for every CpG island, or for a range or island you pick on the map. It checks the pairs for off-target products in the converted genome, and exports an oligo order sheet together with amplicon references for analysing the sequencing reads.
 
-## Install and run
+## Run the app
+
+Choose one of the following paths:
+
+| Where | Direct R installation | Apptainer/Singularity container |
+|---|---|---|
+| Your computer | Use when R and the required tools can be installed locally. | Use when you want a self-contained, reproducible environment. |
+| HPC | Use the cluster's R and software modules or Conda environment. | Usually the simplest HPC option when Apptainer/Singularity is available. |
+
+The app listens on `127.0.0.1` by default. Keep that setting on shared systems and access an HPC job through an SSH tunnel.
+
+### Local computer: direct R installation
+
+Install R and the package dependencies. Bioconductor packages must be installed with an R version supported by the current Bioconductor release.
 
 ```r
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
 
 BiocManager::install(c(
-    "rtracklayer",
-    "GenomicRanges",
-    "IRanges",
-    "Biostrings",
-    "Rsamtools",
-    "shiny",
-    "bslib"
-))
+  "rtracklayer", "GenomicRanges", "IRanges", "Biostrings", "Rsamtools",
+  "shiny", "bslib"
+), ask = FALSE, update = FALSE)
 ```
 
-External tools:
+Install the command-line tools used by the app:
 
-| Tool | Needed for | Install |
+| Tool | Required for | Example installation |
 |---|---|---|
-| [Primer3](https://primer3.org) `primer3_core` (>= 2.5.0) | primer design | `sudo apt install primer3`, `conda install -c bioconda primer3` or `brew install primer3` |
-| [Bowtie2](https://github.com/BenLangmead/bowtie2) and [Bismark](https://github.com/FelixKrueger/Bismark) | optional specificity check | `conda install -c bioconda bowtie2 bismark` |
+| [Primer3](https://primer3.org) `primer3_core` (>= 2.5.0) | Primer design | `conda install -c bioconda primer3` |
+| [Bowtie2](https://github.com/BenLangmead/bowtie2) and [Bismark](https://github.com/FelixKrueger/Bismark) | Optional specificity check | `conda install -c bioconda bowtie2 bismark` |
 
-The tools are found on the `PATH`. Alternatively, set their paths in the GUI under **External tools**, or with `options(promoterPrimerMapper.primer3 = "/path/to/primer3_core", promoterPrimerMapper.bowtie2 = "/path/to/bowtie2")`.
+On Debian/Ubuntu, `sudo apt install primer3 bowtie2` supplies the first two tools; install Bismark with Conda or your system package manager. Confirm that the commands are available before starting the app:
 
-Install the package from the project directory:
+```bash
+command -v primer3_core
+command -v bowtie2
+command -v bismark_genome_preparation
+```
+
+Clone and install the package, then launch the GUI:
 
 ```bash
 git clone https://github.com/SaraGoodlab/promoterPrimerMapper.git
 cd promoterPrimerMapper
 R CMD INSTALL .
+R --vanilla -e 'promoterPrimerMapper::run_app()'
 ```
 
-Then launch the GUI in R:
+Open <http://127.0.0.1:3838> if a browser does not open automatically. You may instead install a published release asset with `R CMD INSTALL promoterPrimerMapper_<version>.tar.gz`.
+
+The app looks for `primer3_core` and `bowtie2` on `PATH`. If necessary, supply their full paths in the GUI under **External tools**, or before launching R:
 
 ```r
-promoterPrimerMapper::run_app()
+options(
+  promoterPrimerMapper.primer3 = "/path/to/primer3_core",
+  promoterPrimerMapper.bowtie2 = "/path/to/bowtie2"
+)
 ```
 
-### GitHub release installation
+### HPC: direct R installation
 
-For a published GitHub Release, install the Bioconductor dependencies first, then download the release asset named `promoterPrimerMapper_<version>.tar.gz` and install it locally:
+Run the app in an interactive compute allocation, not on a login node. The module names and scheduler commands below are examples; use your cluster's documented equivalents.
 
 ```bash
-R CMD INSTALL promoterPrimerMapper_0.2.0.tar.gz
+# On the login node: obtain an interactive allocation.
+salloc --time=02:00:00 --mem=8G --cpus-per-task=2
+
+# On the allocated compute node: load locally provided software.
+module load R primer3 bowtie2 bismark
+
+# Install R packages where you have write access, once per R version.
+export R_LIBS_USER="$HOME/R/library"
+mkdir -p "$R_LIBS_USER"
+git clone https://github.com/SaraGoodlab/promoterPrimerMapper.git
+cd promoterPrimerMapper
+R CMD INSTALL --library="$R_LIBS_USER" .
+
+# Keep the app private to the compute node.
+R --vanilla -e 'promoterPrimerMapper::run_app(host = "127.0.0.1", port = 3838, launch.browser = FALSE)'
 ```
 
-Alternatively, with the GitHub repository path:
+From your own computer, forward the port through the login node. Replace `node123` with the allocated node name from `squeue`, `srun hostname`, or the scheduler's equivalent.
 
-```r
-install.packages("remotes")
-remotes::install_url(
-  "https://github.com/SaraGoodlab/promoterPrimerMapper/releases/download/v0.2.0/promoterPrimerMapper_0.2.0.tar.gz",
-  dependencies = FALSE
-)
-promoterPrimerMapper::run_app()
+```bash
+ssh -N -J user@login.cluster -L 3838:127.0.0.1:3838 user@node123
 ```
 
-## Running in Apptainer/Singularity
+Then open <http://127.0.0.1:3838> locally. If the compute node is not reachable through SSH, follow your cluster's web-proxy or port-forwarding instructions.
 
-The image contains R, the package, Primer3, Bowtie2 and Bismark, so nothing else needs installing on the host. Build it from the repository root. Building needs `--fakeroot` or root; if your cluster doesn't allow builds, build on a workstation and copy the `.sif` across.
+### Local computer: container
+
+The Apptainer/Singularity image includes R, this package, Primer3, Bowtie2, and Bismark. Build it once from the repository root; building requires root or Apptainer's `--fakeroot` support.
 
 ```bash
 apptainer build --fakeroot promoterPrimerMapper.sif container/promoterPrimerMapper.def
 ```
 
-`singularity` accepts the same commands. The build runs the test suite inside the image with the real tools; add `--notest` to skip it, or run it later with `apptainer test promoterPrimerMapper.sif`.
+Use `singularity` in place of `apptainer` on systems that provide that command. The build runs the package tests; add `--notest` to skip them, or run them later with `apptainer test promoterPrimerMapper.sif`.
 
-Start the GUI and open <http://127.0.0.1:3838>:
+Bind the directory that holds the annotation, reference FASTA, `.fai`, and any Bismark genome folder. The bind preserves the same path inside the container, so paste that host path into the GUI.
 
 ```bash
 apptainer run --bind /path/to/genomes promoterPrimerMapper.sif
-apptainer run --bind /path/to/genomes promoterPrimerMapper.sif --port 4000   # another port
+# Use another local port if 3838 is already occupied.
+apptainer run --bind /path/to/genomes promoterPrimerMapper.sif --port 4000
 ```
 
-- **File paths.** Paths typed into the GUI are read inside the container. Your home and current directories are mounted automatically; bind any other location with `--bind`, e.g. `/project` and `/scratch` on HPC.
-- **Tools.** Leave **External tools** empty: `primer3_core`, `bowtie2` and Bismark are already on the container's `PATH`.
-- **Bismark index.** Prepare the specificity index with the same image: `apptainer exec --bind /path/to/genomes promoterPrimerMapper.sif bismark_genome_preparation --bowtie2 /path/to/genomes/hg38`.
-- **Clusters.** Run the app on a compute node inside an interactive job. Then forward the port from your computer, if your cluster allows SSH to nodes running your jobs:
+Open <http://127.0.0.1:3838> (or port `4000`) in your browser. Leave **External tools** empty: the image already places `primer3_core` and `bowtie2` on `PATH`.
 
-  ```bash
-  # on the cluster
-  salloc --time=2:00:00 --mem=8G --cpus-per-task=2
-  apptainer run --bind /project,/scratch promoterPrimerMapper.sif
-  # on your computer (node name from squeue)
-  ssh -N -J user@login.cluster -L 3838:127.0.0.1:3838 user@node123
-  ```
+Prepare a Bismark index with the same image when you need specificity checking:
 
-- **Security.** The app listens on `127.0.0.1` only and can read any file your account can. Avoid `--host 0.0.0.0` on shared machines, because other users on the network could then use it.
+```bash
+apptainer exec --bind /path/to/genomes promoterPrimerMapper.sif \
+  bismark_genome_preparation --bowtie2 /path/to/genomes/hg38
+```
+
+### HPC: container
+
+Copy a previously built `.sif` to the cluster if the cluster prohibits image builds. Then request an interactive allocation and run the image on its compute node:
+
+```bash
+# On the login node
+salloc --time=02:00:00 --mem=8G --cpus-per-task=2
+
+# On the allocated compute node
+apptainer run --bind /project,/scratch promoterPrimerMapper.sif
+```
+
+All paths entered in the GUI must be available inside the container. Bind every directory that contains reference data or output files, for example `--bind /project/mygroup,/scratch/$USER`. The container already contains the external tools, so no modules or host R libraries are needed.
+
+From your computer, create the same SSH tunnel used for a direct installation:
+
+```bash
+ssh -N -J user@login.cluster -L 3838:127.0.0.1:3838 user@node123
+```
+
+Open <http://127.0.0.1:3838> in your local browser. Do not use `--host 0.0.0.0` on a shared network: the app can read every file available to your account.
 
 ## Workflow in the GUI
 

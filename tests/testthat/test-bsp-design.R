@@ -11,7 +11,7 @@ test_that("parameter defaults, input specs and validation agree", {
 })
 
 test_that("targets resolve from TSS-relative bounds and CpG islands", {
-  x <- demo_promoter("BSPPLUS")
+  x <- fixture_promoter("BSPPLUS")
   default <- resolve_bsp_target(x)
   expect_equal(c(default$tss_start, default$tss_end), c(-50L, 50L))
   expect_equal(c(default$start, default$end), c(951L, 1050L))
@@ -28,7 +28,7 @@ test_that("targets resolve from TSS-relative bounds and CpG islands", {
 })
 
 test_that("each CpG island gets one window, centred on the TSS or the island", {
-  x <- demo_promoter("BSPPLUS", upstream = 1500L)
+  x <- fixture_promoter("BSPPLUS", upstream = 1500L)
   islands <- cpg_island_scan(x)
   expect_equal(nrow(islands), 2L)
   targets <- island_targets(x)
@@ -46,12 +46,12 @@ test_that("each CpG island gets one window, centred on the TSS or the island", {
   wide <- island_targets(x, list(product_size_min = 400L, product_size_max = 700L), islands = 1L)
   expect_equal(c(wide$start, wide$end), c(islands$start[1L], islands$end[1L]))
   expect_error(island_targets(x, islands = 3L), "CpG island 3 does not exist")
-  minus <- island_targets(demo_promoter("BSPMINUS", upstream = 1500L))
+  minus <- island_targets(fixture_promoter("BSPMINUS", upstream = 1500L))
   expect_equal(c(minus$start, minus$end), c(1501L - 132L, 1501L + 132L))
 })
 
 test_that("non-island targets pick the densest CpG clusters outside islands", {
-  x <- demo_promoter("BSPPLUS", upstream = 1500L)
+  x <- fixture_promoter("BSPPLUS", upstream = 1500L)
   islands <- cpg_island_scan(x)
   targets <- non_island_targets(x)
   expect_gt(nrow(targets), 0L)
@@ -79,7 +79,7 @@ test_that("non-island targets pick the densest CpG clusters outside islands", {
 })
 
 test_that("target tables are validated", {
-  x <- demo_promoter("BSPPLUS")
+  x <- fixture_promoter("BSPPLUS")
   params <- bsp_primer_params()
   table <- rbind(resolve_bsp_target(x), island_targets(x))
   expect_equal(bsp_targets(x, table, params)$target_id, c("R1", "CGI1", "CGI2"))
@@ -91,7 +91,7 @@ test_that("target tables are validated", {
 })
 
 test_that("candidate primers obey the bisulfite rules", {
-  x <- demo_promoter("BSPMINUS")
+  x <- fixture_promoter("BSPMINUS")
   params <- bsp_primer_params()
   target <- resolve_bsp_target(x, NULL, params)
   for (strand in c("sense", "antisense")) {
@@ -119,7 +119,7 @@ test_that("candidate primers obey the bisulfite rules", {
 })
 
 test_that("candidate filtering counts the footprints each bisulfite rule removes", {
-  x <- demo_promoter("BSPMINUS")
+  x <- fixture_promoter("BSPMINUS")
   params <- bsp_primer_params()
   target <- resolve_bsp_target(x, NULL, params)
   template <- bisulfite_template(x, "sense")
@@ -170,7 +170,7 @@ test_that("hints name the main reason targets got no pair", {
 })
 
 test_that("allowed CpGs become degenerate bases in the 5' half", {
-  x <- demo_promoter("BSPPLUS")
+  x <- fixture_promoter("BSPPLUS")
   params <- validate_bsp_params(list(max_cpg_in_primer = 1L))
   target <- resolve_bsp_target(x, NULL, params)
   template <- bisulfite_template(x, "sense")
@@ -190,9 +190,9 @@ test_that("diverse selection limits primer-site reuse", {
 
 test_that("designed pairs satisfy BSP invariants and round-trip through the FASTA", {
   skip_if_no_primer3()
-  fasta <- system.file("extdata", "bsp_demo.fa", package = "promoterPrimerMapper")
+  fasta <- fixture_reference("fa")
   for (gene in c("BSPPLUS", "BSPMINUS")) {
-    x <- demo_promoter(gene)
+    x <- fixture_promoter(gene)
     design <- design_bsp_primers(x, "both")
     pairs <- design$pairs
     expect_s3_class(design, "bsp_design")
@@ -231,7 +231,7 @@ test_that("designed pairs satisfy BSP invariants and round-trip through the FAST
 
 test_that("an infeasible design reports diagnostics instead of failing", {
   skip_if_no_primer3()
-  design <- design_bsp_primers(demo_promoter("BSPPLUS"), "sense", params = list(min_converted_c = 15L))
+  design <- design_bsp_primers(fixture_promoter("BSPPLUS"), "sense", params = list(min_converted_c = 15L))
   expect_null(design$pairs)
   expect_true(design$fallback)
   expect_true(all(design$targets$n_pairs == 0L))
@@ -245,8 +245,8 @@ test_that("an infeasible design reports diagnostics instead of failing", {
 
 test_that("auto design falls back to non-island CpGs", {
   skip_if_no_primer3()
-  fasta <- system.file("extdata", "bsp_demo.fa", package = "promoterPrimerMapper")
-  flank <- function(start, end) reference_sequence(fasta, "chrDemo1", start, end)
+  fasta <- fixture_reference("fa")
+  flank <- function(start, end) reference_sequence(fasta, "chrTest1", start, end)
   # No island at all.
   plain <- promoter(flank(1L, 1400L), region_start = 1L, tss = 700L)
   expect_equal(nrow(cpg_island_scan(plain)), 0L)
@@ -270,11 +270,11 @@ test_that("auto design falls back to non-island CpGs", {
 
 test_that("design exports record parameters, oligos and amplicon references", {
   skip_if_no_primer3()
-  design <- design_bsp_primers(demo_promoter("BSPPLUS"), "sense")
+  design <- design_bsp_primers(fixture_promoter("BSPPLUS"), "sense")
   pairs_file <- tempfile(fileext = ".tsv")
   write_bsp_pairs(design, pairs_file)
   lines <- readLines(pairs_file)
-  expect_match(lines[1L], "^# design: BSPPLUS chrDemo1:")
+  expect_match(lines[1L], "^# design: BSPPLUS chrTest1:")
   expect_equal(lines[2L], "# targets: CGI1=-510..-246; CGI2=-132..+133")
   expect_match(lines[3L], "^# params: product_size_min=200; ")
   expect_true(all(vapply(names(bsp_primer_params()), function(n) grepl(paste0(n, "="), lines[3L], fixed = TRUE), logical(1))))

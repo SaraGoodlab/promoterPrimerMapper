@@ -43,11 +43,11 @@ test_that("products need a forward hit followed by a nearby reverse hit", {
 test_that("Bowtie2 finds the on-target product and a planted off-target copy", {
   skip_if_no_primer3()
   skip_if_no_bismark()
-  design <- design_bsp_primers(demo_promoter("BSPPLUS"), "sense")
+  design <- design_bsp_primers(fixture_promoter("BSPPLUS"), "sense")
   prepare <- function(extra = NULL) {
     folder <- tempfile("bismark")
     dir.create(folder)
-    genome <- Biostrings::readDNAStringSet(system.file("extdata", "bsp_demo.fa", package = "promoterPrimerMapper"))
+    genome <- Biostrings::readDNAStringSet(fixture_reference("fa"))
     if (!is.null(extra)) genome <- c(genome, Biostrings::DNAStringSet(extra))
     Biostrings::writeXStringSet(genome, file.path(folder, "genome.fa"))
     status <- system2(Sys.which("bismark_genome_preparation"), c("--bowtie2", folder), stdout = FALSE, stderr = FALSE)

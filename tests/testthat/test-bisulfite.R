@@ -40,9 +40,9 @@ test_that("bisulfite templates flag converted and CpG cytosines per strand", {
   expect_equal(bisulfite_template(promoter("TCAGCGTTCC", "-"), "sense")$assay_strand, "OB")
 })
 
-test_that("CpG islands are found around the demo TSSs", {
+test_that("CpG islands are found around the fixture TSSs", {
   for (gene in c("BSPPLUS", "BSPMINUS")) {
-    islands <- cpg_island_scan(demo_promoter(gene))
+    islands <- cpg_island_scan(fixture_promoter(gene))
     expect_true(any(islands$tss_start < 0L & islands$tss_end > 0L))
     expect_true(all(islands$gc_percent >= 50 & islands$cpg_obs_exp >= 0.6))
   }

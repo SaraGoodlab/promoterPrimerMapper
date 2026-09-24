@@ -1,0 +1,5 @@
+chrTest1	synthetic	gene	3001	5800	.	+	.	gene_id "BSPPLUS"; gene_name "BSPPLUS";
+chrTest1	synthetic	transcript	3001	5800	.	+	.	gene_id "BSPPLUS"; gene_name "BSPPLUS"; transcript_id "BSPPLUS-201";
+chrTest1	synthetic	transcript	3001	4900	.	+	.	gene_id "BSPPLUS"; gene_name "BSPPLUS"; transcript_id "BSPPLUS-202";
+chrTest2	synthetic	gene	300	2500	.	-	.	gene_id "BSPMINUS"; gene_name "BSPMINUS";
+chrTest2	synthetic	transcript	300	2500	.	-	.	gene_id "BSPMINUS"; gene_name "BSPMINUS"; transcript_id "BSPMINUS-201";

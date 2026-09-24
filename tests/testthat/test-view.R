@@ -15,7 +15,7 @@ test_that("clicks select the CpG island under the cursor", {
 
 test_that("selected regions report TSS-relative, sequence and genomic positions", {
   for (gene in c("BSPPLUS", "BSPMINUS")) {
-    x <- demo_promoter(gene)
+    x <- fixture_promoter(gene)
     tss <- tss_sense_position(x)
     region <- describe_region(x, tss - 100L, tss + 49L)
     expect_equal(region$tss_relative, "-100..+50")
@@ -32,14 +32,14 @@ test_that("selected regions report TSS-relative, sequence and genomic positions"
     expect_match(cursor, "^Cursor: \\+1 ")
     expect_true(grepl(sprintf("%s:%s,", x$scaffold, format(x$tss, big.mark = ",")), cursor, fixed = TRUE))
   }
-  x <- demo_promoter("BSPPLUS")
+  x <- fixture_promoter("BSPPLUS")
   expect_equal(describe_region(x, 1L, 50L)$cpg_islands, "none")
   expect_error(describe_region(x, 10L, 5000L), "beyond the extracted sequence")
   expect_equal(describe_position(x, -3), "")
 })
 
 test_that("island table and choices label every island", {
-  x <- demo_promoter("BSPPLUS")
+  x <- fixture_promoter("BSPPLUS")
   table <- island_table(x)
   expect_equal(table$island, c("CGI1", "CGI2"))
   expect_equal(table$design_window, format_tss_interval(island_targets(x)$tss_start, island_targets(x)$tss_end))
@@ -50,7 +50,7 @@ test_that("island table and choices label every island", {
 })
 
 test_that("the CpG map draws every layer", {
-  x <- demo_promoter("BSPMINUS")
+  x <- fixture_promoter("BSPMINUS")
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off(), add = TRUE)
   expect_null(plot_cpg_map(x))

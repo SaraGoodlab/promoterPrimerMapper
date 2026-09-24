@@ -36,6 +36,7 @@ test_that("reset restores every parameter input", {
 test_that("the import tab is gone and sequence and design share one screen", {
   html <- as.character(app_ui())
   expect_false(grepl("primer_text|id=\"convert\"|Import primers", html))
+  expect_false(grepl("demo_gene|load_demo|Load demo", html))
   expect_false(grepl("tabbable|nav-tabs", html))
   for (id in c("cpg_map", "range_from", "range_to", "use_selection", "bsp_target_mode", "bsp_island", "design_primers", "bsp_table")) {
     expect_match(html, sprintf("id=\"%s\"", id), fixed = TRUE)
@@ -47,14 +48,14 @@ test_that("brushing the map sets the TSS-relative range and clicks pick islands"
   sent <- list()
   session$sendInputMessage <- function(inputId, message) sent[[inputId]] <<- message
   shiny::testServer(app_server, session = session, {
-    extracted(demo_promoter("BSPPLUS"))
+    extracted(fixture_promoter("BSPPLUS"))
     tss <- tss_sense_position(extracted())
     session$setInputs(cpg_brush = list(xmin = tss - 320.4, xmax = tss + 44.6))
     expect_equal(as.numeric(sent$range_from$value), -320)
     expect_equal(as.numeric(sent$range_to$value), 46)
     session$setInputs(range_from = -320, range_to = 46)
     expect_equal(selection(), c(tss - 320L, tss + 45L))
-    expect_match(output$selection_table, "chrDemo1:2681-3046 (+)", fixed = TRUE)
+    expect_match(output$selection_table, "chrTest1:2681-3046 (+)", fixed = TRUE)
     session$setInputs(range_from = 0)
     expect_match(selection(), "0 is not a valid")
     session$setInputs(range_from = -320, use_selection = 1)
@@ -81,8 +82,8 @@ test_that("extraction designs all CpG islands and the other target modes design 
   sent <- list()
   session$sendInputMessage <- function(inputId, message) sent[[inputId]] <<- message
   shiny::testServer(app_server, session = session, {
-    session$setInputs(gtf_path = system.file("extdata", "bsp_demo.gtf", package = "promoterPrimerMapper"), gene_query = "BSPPLUS", find_gene = 1)
-    fasta <- system.file("extdata", "bsp_demo.fa", package = "promoterPrimerMapper")
+    session$setInputs(gtf_path = fixture_reference("gtf"), gene_query = "BSPPLUS", find_gene = 1)
+    fasta <- fixture_reference("fa")
     session$setInputs(fasta_path = fasta, fasta_index_path = paste0(fasta, ".fai"), tss_choice = "1",
                       upstream = 1000, downstream = 500, extract = 1)
     expect_match(message_text(), "^Extracted 1501 bp .* Designed [0-9]+ BSP primer pairs for CGI1 .*CGI2")

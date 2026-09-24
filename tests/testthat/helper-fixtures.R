@@ -7,10 +7,12 @@ promoter <- function(sequence, strand = "+", region_start = 100L, tss = NULL) {
                  region_end = region_end, sequence = sequence), class = c("promoter_sequence", "list"))
 }
 
-demo_promoter <- function(gene, upstream = 1000L, downstream = 500L) {
-  annotation <- load_annotation(system.file("extdata", "bsp_demo.gtf", package = "promoterPrimerMapper"))
+fixture_reference <- function(file) test_path("fixtures", paste0("bsp_reference.", file))
+
+fixture_promoter <- function(gene, upstream = 1000L, downstream = 500L) {
+  annotation <- load_annotation(fixture_reference("gtf"))
   record <- collapse_tss(get_transcript_tss(annotation, gene = gene))[1L, , drop = FALSE]
-  extract_tss_region(record, system.file("extdata", "bsp_demo.fa", package = "promoterPrimerMapper"), upstream, downstream)
+  extract_tss_region(record, fixture_reference("fa"), upstream, downstream)
 }
 
 tool_available <- function(locate) !inherits(try(locate(), silent = TRUE), "try-error")

@@ -10,7 +10,8 @@ plot_cpg_map(
   rank = NULL,
   targets = NULL,
   selection = NULL,
-  island = NULL
+  island = NULL,
+  view = NULL
 )
 }
 \arguments{
@@ -23,9 +24,11 @@ plot_cpg_map(
 \item{targets}{Optional targets table (see \code{\link[=island_targets]{island_targets()}}) shaded instead
 of the design's targets.}
 
-\item{selection}{Optional sense interval \code{c(start, end)} drawn as a dashed box.}
+\item{selection}{Optional sense interval \code{c(start, end)} drawn as a solid box.}
 
 \item{island}{Optional island index to outline.}
+
+\item{view}{Optional two sense positions to zoom to, with 50 bp of padding.}
 }
 \value{
 \code{NULL}, invisibly; draws with base graphics.

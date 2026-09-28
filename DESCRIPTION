@@ -26,7 +26,9 @@ Imports:
     Rsamtools,
     rtracklayer,
     shiny,
-    bslib,
+    bslib (>= 0.9.1),
+    htmltools (>= 0.5.2),
+    later (>= 1.0.0),
     stats,
     utils
 Suggests:

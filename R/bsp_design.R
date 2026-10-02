@@ -747,12 +747,23 @@ design_pairs <- function(design, ranks = NULL) {
 bsp_param_comments <- function(design) {
   extracted <- design$extracted
   targets <- design$targets
-  c(sprintf("design: %s %s:%s-%s strand=%s TSS=%s", design_label(design), get_field(extracted, "scaffold"),
+  comments <- c(sprintf("design: %s %s:%s-%s strand=%s TSS=%s", design_label(design), get_field(extracted, "scaffold"),
             get_field(extracted, "region_start"), get_field(extracted, "region_end"), get_field(extracted, "strand"),
             get_field(extracted, "tss")),
     paste0("targets: ", paste(sprintf("%s=%s", targets$target_id, format_tss_interval(targets$tss_start, targets$tss_end)), collapse = "; "),
            if (isTRUE(design$fallback)) " (no CpG island yielded a pair; non-island fallback)" else ""),
     paste0("params: ", paste(names(design$params), unlist(design$params), sep = "=", collapse = "; ")))
+  provenance <- design$gui_provenance
+  if (!is.null(provenance)) {
+    source <- provenance$extraction
+    comments <- c(comments, paste("completed:", provenance$completed),
+      paste("annotation:", source$annotation$path), paste("reference:", source$fasta$path), paste("index:", source$index$path))
+  }
+  if (!is.null(design$specificity)) {
+    p <- design$specificity$settings
+    comments <- c(comments, sprintf("specificity: up to %s pairs per target; max_mismatch=%s; max_product=%s", p$top_n, p$max_mismatch, p$max_product))
+  }
+  comments
 }
 
 #' Write BSP primer pairs as a delimited table.

@@ -477,6 +477,7 @@ annotate_pairs <- function(extracted, template, pairs) {
     strand = template$strand, assay_strand = template$assay_strand,
     left_sequence = pairs$left_sequence, right_sequence = pairs$right_sequence,
     product_size = pairs$product_size, cpg_in_amplicon = pairs$cpg_in_amplicon,
+    product_tm = if (is.null(pairs$product_tm)) rep(NA_real_, nrow(pairs)) else pairs$product_tm,
     left_tm = round(pairs$left_tm, 1), right_tm = round(pairs$right_tm, 1), tm_diff = pairs$tm_diff,
     left_gc = round(pairs$left_gc_percent, 1), right_gc = round(pairs$right_gc_percent, 1),
     left_length = pairs$left_length, right_length = pairs$right_length,
@@ -779,23 +780,58 @@ write_bsp_pairs <- function(design, file, sep = "\t") {
   write_primer_results(design_pairs(design), file, sep = sep, comments = bsp_param_comments(design))
 }
 
-#' Write an oligo order sheet.
+#' Write a primer CSV with design metadata.
+#'
+#' Writes one row per primer, forward then reverse for each pair. Every metadata
+#' line begins with `#`; the following table has an ordinary column-name row.
+#' Primer Start/Stop are 1-based inclusive genomic bounds (Start <= Stop), not
+#' oligo direction. Sequences are written 5' to 3'. Self complementarity values
+#' are Primer3 thermodynamic SELF_ANY_TH/SELF_END_TH values in degrees Celsius.
+#' Product Tm is calculated by Primer3 on the CpG-retaining bisulfite template;
+#' it is empty for older designs that did not retain this value.
+#' CpGs in Product counts complete CpG dinucleotides in the original amplicon,
+#' including primer-binding sites.
 #' @param design A `bsp_design` object.
 #' @param file Output path.
 #' @param ranks Pair ranks to include; all pairs by default.
 #' @param sep Field separator.
 #' @return The output path, invisibly.
 #' @export
-write_order_sheet <- function(design, file, ranks = NULL, sep = "\t") {
+write_order_sheet <- function(design, file, ranks = NULL, sep = ",") {
   pairs <- design_pairs(design, ranks)
+  alternate <- function(left, right) as.vector(rbind(left, right))
+  product_tm <- if (is.null(pairs$product_tm)) rep(NA_real_, nrow(pairs)) else pairs$product_tm
+  product_cpg <- vapply(seq_len(nrow(pairs)), function(i) {
+    template <- design$templates[[pairs$strand[i]]]
+    if (is.null(template$cpg_c)) return(NA_integer_)
+    as.integer(window_counts(template$cpg_c, pairs$template_left_start[i], pairs$template_right_end[i] - 1L))
+  }, integer(1))
   sheet <- data.frame(
-    name = as.vector(rbind(paste0(pair_names(design, pairs), "_F"), paste0(pair_names(design, pairs), "_R"))),
-    sequence = as.vector(rbind(pairs$left_sequence, pairs$right_sequence)),
-    length = as.vector(rbind(pairs$left_length, pairs$right_length)),
-    tm = as.vector(rbind(pairs$left_tm, pairs$right_tm)),
-    stringsAsFactors = FALSE
+    Target = rep(pairs$target_id, each = 2L),
+    Primer = alternate(paste0(pair_names(design, pairs), "_F"), paste0(pair_names(design, pairs), "_R")),
+    `Sequence (5'->3')` = alternate(pairs$left_sequence, pairs$right_sequence),
+    `Primer Length` = alternate(pairs$left_length, pairs$right_length),
+    Scaffold = rep(pairs$scaffold, each = 2L),
+    `Primer Start` = alternate(pairs$left_genomic_start, pairs$right_genomic_start),
+    `Primer Stop` = alternate(pairs$left_genomic_end, pairs$right_genomic_end),
+    Tm = alternate(pairs$left_tm, pairs$right_tm),
+    `GC%` = alternate(pairs$left_gc, pairs$right_gc),
+    `Self complementarity` = alternate(pairs$left_self_any, pairs$right_self_any),
+    `Self 3' complementarity` = alternate(pairs$left_self_end, pairs$right_self_end),
+    `Product length` = rep(pairs$product_size, each = 2L),
+    `Product Tm` = rep(product_tm, each = 2L),
+    `CpGs in Product` = rep(product_cpg, each = 2L),
+    stringsAsFactors = FALSE, check.names = FALSE
   )
-  write_primer_results(sheet, file, sep = sep)
+  comments <- c(bsp_param_comments(design),
+    paste("included pairs:", paste(sprintf("%s (%s template, %s)", pair_names(design, pairs), pairs$strand, pairs$assay_strand), collapse = "; ")),
+    "Primer names: _F = forward and _R = reverse on the assayed template; sequences are 5' to 3'.",
+    "Coordinates: 1-based inclusive genomic bounds; Primer Start <= Primer Stop, regardless of oligo direction.",
+    "Units: lengths in bp; Tm and Product Tm in degrees Celsius; GC% is percent.",
+    "Self complementarity and Self 3' complementarity: Primer3 SELF_ANY_TH and SELF_END_TH, in degrees Celsius.",
+    "Product Tm: Primer3 value for the CpG-retaining bisulfite template; missing values are empty.",
+    "CpGs in Product: complete CpG sites in the original amplicon, including primer-binding sites.")
+  write_primer_results(sheet, file, sep = sep, comments = comments)
 }
 
 #' Amplicon reference sequences for BSP read analysis.

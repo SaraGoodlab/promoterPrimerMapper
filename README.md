@@ -167,12 +167,19 @@ The sidebar takes you from reference files to an extracted promoter. Everything 
 - **Targets without a pair** get candidate counts for each filtering stage, the main reasons candidates were rejected, and a hint on what to change. For example, *allow 1–2 CpGs per primer* where CpG-dense islands leave no CpG-free primer site.
 - **Selected pair.** Selecting a pair shows per-primer statistics, draws the amplicon on the map, and shows the converted template with the primers, CpGs and TSS highlighted.
 - **Downloads:**
-  - the pair table (TSV/CSV), headed by the design region, the targets and every parameter used;
-  - an order sheet for the selected pair, with oligos named like `GENE_CGI1_BSP3_F`;
+  - **Primers CSV** for all pairs, or **Selected primers CSV** for the selected pair, with one row per oligo and names like `GENE_CGI1_BSP3_F` / `_R`;
   - amplicon reference FASTA (genomic, converted-unmethylated and converted-methylated) for BiQ Analyzer, QUMA or Bismark.
 - **Check specificity** aligns the best pairs of each target to a Bismark-prepared genome and reports off-target products (see below).
 
 **Extracted sequence** (collapsed): the TSS record, the sequence and the four FASTA downloads.
+
+Primer CSVs begin with metadata lines, each prefixed with `#`, followed by an ordinary CSV column header and data rows. The columns are:
+
+```text
+Target,Primer,Sequence (5'->3'),Primer Length,Scaffold,Primer Start,Primer Stop,Tm,GC%,Self complementarity,Self 3' complementarity,Product length,Product Tm,CpGs in Product
+```
+
+Start/Stop are 1-based inclusive genomic bounds, always Start <= Stop. Temperatures and the Primer3 thermodynamic self-complementarity values are in degrees Celsius. Product Tm uses the CpG-retaining bisulfite template. CpGs in Product counts complete CpG sites in the original amplicon, including primer-binding sites.
 
 ## Using the R API
 
@@ -194,7 +201,8 @@ design_bsp_primers(promoter, target = "non_island")
 
 design <- check_bsp_specificity(design, "/path/to/bismark_genome", top_n = 5)
 write_bsp_pairs(design, "pairs.tsv")
-write_order_sheet(design, "order.tsv", ranks = 1)
+write_order_sheet(design, "primers.csv")          # all primers, metadata + CSV
+write_order_sheet(design, "selected.csv", ranks = 1)
 write_amplicon_references(design, "amplicon.fa", ranks = 1)
 plot_cpg_map(promoter, design, rank = 1)
 ```

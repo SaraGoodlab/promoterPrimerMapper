@@ -203,8 +203,9 @@ map_primer_coordinates <- function(primers, extracted_sequence, start_convention
 
 write_primer_results <- function(results, file, sep = "\t", comments = NULL) {
   if (!is.data.frame(results)) stop("results must be a data frame.", call. = FALSE)
+  comments <- unlist(strsplit(as.character(comments), "\r\n|\n|\r"), use.names = FALSE)
   if (length(comments)) writeLines(paste0("# ", comments), file)
   # write.table warns when appending column names after the comment lines.
-  suppressWarnings(utils::write.table(results, file, sep = sep, row.names = FALSE, quote = FALSE, na = "", append = length(comments) > 0L))
+  suppressWarnings(utils::write.table(results, file, sep = sep, row.names = FALSE, quote = identical(sep, ","), qmethod = "double", na = "", append = length(comments) > 0L))
   invisible(file)
 }

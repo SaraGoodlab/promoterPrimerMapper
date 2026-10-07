@@ -210,12 +210,20 @@ test_that("designed pairs satisfy BSP invariants and round-trip through the FAST
     expect_true(all(pairs$left_converted_c >= params$min_converted_c & pairs$right_converted_c >= params$min_converted_c))
     expect_true(all(pairs$left_cpg == 0L & pairs$right_cpg == 0L))
     expect_true(all(pairs$tm_diff <= params$max_tm_diff))
+    expect_true(all(is.finite(pairs$product_tm)))
+    export_file <- tempfile(fileext = ".csv")
+    write_order_sheet(design, export_file)
+    exported <- utils::read.csv(export_file, comment.char = "#", check.names = FALSE)
+    expect_equal(nrow(exported), 2L * nrow(pairs))
     for (i in seq_len(nrow(pairs))) {
       p <- pairs[i, ]
       bounds <- as.integer(strsplit(gsub("\\+", "", p$amplicon_tss), "..", fixed = TRUE)[[1L]])
       target <- design$targets[design$targets$target_id == p$target_id, ]
       expect_true(bounds[1L] <= target$tss_start && bounds[2L] >= target$tss_end)
       expect_equal(p$amplicon_end - p$amplicon_start + 1L, p$product_size)
+      product <- reference_sequence(fasta, p$scaffold, p$amplicon_start, p$amplicon_end)
+      expected_cpg <- Biostrings::countPattern("CG", Biostrings::DNAString(product))
+      expect_equal(exported[["CpGs in Product"]][c(2L * i - 1L, 2L * i)], rep(expected_cpg, 2L))
       expect_equal(length(strsplit(p$cpg_tss_positions, ",")[[1L]]), p$cpg_in_amplicon)
       # Re-read each primer site from the genome, orient it to the assayed strand and convert it.
       oriented <- function(start, end) {
@@ -281,11 +289,13 @@ test_that("design exports record parameters, oligos and amplicon references", {
   table <- utils::read.delim(pairs_file, comment.char = "#")
   expect_equal(nrow(table), nrow(design$pairs))
 
-  order_file <- tempfile(fileext = ".tsv")
+  order_file <- tempfile(fileext = ".csv")
   write_order_sheet(design, order_file, ranks = 1L)
-  sheet <- utils::read.delim(order_file)
-  expect_equal(sheet$name, paste0("BSPPLUS_", design$pairs$target_id[1L], "_BSP1_", c("F", "R")))
-  expect_equal(sheet$sequence, c(design$pairs$left_sequence[1L], design$pairs$right_sequence[1L]))
+  sheet <- utils::read.csv(order_file, comment.char = "#", check.names = FALSE)
+  expect_equal(sheet$Primer, paste0("BSPPLUS_", design$pairs$target_id[1L], "_BSP1_", c("F", "R")))
+  expect_equal(sheet[["Sequence (5'->3')"]], c(design$pairs$left_sequence[1L], design$pairs$right_sequence[1L]))
+  expect_true(all(is.finite(design$pairs$product_tm)))
+  expect_equal(sheet[["Product Tm"]], rep(design$pairs$product_tm[1L], 2L))
 
   amplicons <- bsp_amplicons(design, 1L)
   expect_length(amplicons, 3L)

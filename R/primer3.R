@@ -191,7 +191,10 @@ primer3_check_pairs <- function(template, left, right, params, path = primer3_pa
   template <- rep_len(template, length(left))
   records <- lapply(seq_along(left), function(i) {
     c(list(SEQUENCE_ID = i, SEQUENCE_TEMPLATE = template[i], SEQUENCE_PRIMER = left[i], SEQUENCE_PRIMER_REVCOMP = right[i],
-           PRIMER_TASK = "check_primers", PRIMER_PICK_LEFT_PRIMER = 1L, PRIMER_PICK_RIGHT_PRIMER = 1L),
+           PRIMER_TASK = "check_primers", PRIMER_PICK_LEFT_PRIMER = 1L, PRIMER_PICK_RIGHT_PRIMER = 1L,
+           # Primer3 emits product Tm only with a non-default product Tm bound.
+           # This nonbinding bound requests the value without filtering pairs.
+           PRIMER_PRODUCT_MIN_TM = -999999),
       globals)
   })
   output <- run_primer3_tolerant(records, path)

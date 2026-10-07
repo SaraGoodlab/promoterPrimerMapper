@@ -21,7 +21,7 @@ app_pair_design <- function(extracted, strand, target, params, ...) {
     raw <- data.frame(left_start = 300L + i, left_end = 321L + i, right_start = 630L + i, right_end = 651L + i,
       left_sequence = substr(template$converted, 300L + i, 321L + i),
       right_sequence = reverse_complement_text(substr(template$converted, 630L + i, 651L + i)),
-      product_size = 352L, cpg_in_amplicon = i + 3L, left_tm = 56, right_tm = 57, tm_diff = 1,
+      product_size = 352L, product_tm = 70 + i, cpg_in_amplicon = i + 3L, left_tm = 56, right_tm = 57, tm_diff = 1,
       left_gc_percent = 30, right_gc_percent = 30, left_length = 22L, right_length = 22L,
       left_converted_c = 4L, right_converted_c = 4L, left_cpg_in_primer = 0L, right_cpg_in_primer = 0L,
       pair_penalty = 4 - i, left_penalty = 1, right_penalty = 1, compl_any = 0, compl_end = 0,
@@ -38,6 +38,25 @@ test_that("initial pair outputs are guarded and explain the next step", {
     expect_match(as.character(output$bsp_pair_detail$html), "Design primers to review")
     expect_match(as.character(output$bsp_sequence_view$html), "Design primers to review")
     expect_match(as.character(output$design_context$html), "Choose reference files and find a gene.", fixed = TRUE)
+  })
+})
+
+test_that("GUI primer downloads use the CSV schema and correct pair scope", {
+  shiny::testServer(app_server, {
+    extracted(fixture_promoter("BSPMINUS"))
+    design(app_pair_design(extracted(), "both", "auto", bsp_primer_params()))
+    selected_pair(3L)
+    session$setInputs(pair_target_filter = "CGI1", pair_strand_filter = "sense")
+    all <- utils::read.csv(output$download_bsp_pairs_csv, comment.char = "#", check.names = FALSE)
+    selected <- utils::read.csv(output$download_order_sheet, comment.char = "#", check.names = FALSE)
+    expect_equal(nrow(all), 6L)
+    expect_equal(nrow(selected), 2L)
+    expect_equal(ncol(all), 14L)
+    expect_identical(names(selected), names(all))
+    expect_equal(selected$Primer, paste0("BSPMINUS_CGI2_BSP3_", c("F", "R")))
+    expect_equal(selected[["Product Tm"]], c(72, 72))
+    expect_true(startsWith(readLines(output$download_bsp_pairs_csv)[1L], "# "))
+    expect_true(startsWith(readLines(output$download_order_sheet)[1L], "# "))
   })
 })
 

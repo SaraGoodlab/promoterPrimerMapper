@@ -46,6 +46,7 @@ test_that("primer3_core scores oligos and pairs", {
                                utils::modifyList(params, list(product_size_min = 100L)))
   expect_equal(nrow(pairs), 1L)
   expect_true(is.finite(pairs$compl_any))
+  expect_true(is.finite(pairs$product_tm))
 })
 
 test_that("Primer3 explain strings become readable rejection reasons", {

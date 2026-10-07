@@ -2,9 +2,9 @@
 % Please edit documentation in R/bsp_design.R
 \name{write_order_sheet}
 \alias{write_order_sheet}
-\title{Write an oligo order sheet.}
+\title{Write a primer CSV with design metadata.}
 \usage{
-write_order_sheet(design, file, ranks = NULL, sep = "\\t")
+write_order_sheet(design, file, ranks = NULL, sep = ",")
 }
 \arguments{
 \item{design}{A \code{bsp_design} object.}
@@ -19,5 +19,13 @@ write_order_sheet(design, file, ranks = NULL, sep = "\\t")
 The output path, invisibly.
 }
 \description{
-Write an oligo order sheet.
+Writes one row per primer, forward then reverse for each pair. Every metadata
+line begins with \code{#}; the following table has an ordinary column-name row.
+Primer Start/Stop are 1-based inclusive genomic bounds (Start <= Stop), not
+oligo direction. Sequences are written 5' to 3'. Self complementarity values
+are Primer3 thermodynamic SELF_ANY_TH/SELF_END_TH values in degrees Celsius.
+Product Tm is calculated by Primer3 on the CpG-retaining bisulfite template;
+it is empty for older designs that did not retain this value.
+CpGs in Product counts complete CpG dinucleotides in the original amplicon,
+including primer-binding sites.
 }

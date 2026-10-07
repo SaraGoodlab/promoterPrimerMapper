@@ -639,16 +639,14 @@ app_server <- function(input, output, session) {
       if (changed) shiny::p(class = "alert alert-warning", "Specificity settings changed. Displayed results use the previous criteria; check again to update them."))
   })
 
-  output$download_bsp_pairs <- shiny::downloadHandler(
-    filename = function() { shiny::req(has_primer_pairs(design())); sprintf("%s_bsp_pairs.tsv", design_label(design())) },
-    content = function(file) { shiny::req(has_primer_pairs(design())); write_bsp_pairs(design(), file) }
-  )
   output$download_bsp_pairs_csv <- shiny::downloadHandler(
-    filename = function() { shiny::req(has_primer_pairs(design())); sprintf("%s_bsp_pairs.csv", design_label(design())) },
-    content = function(file) { shiny::req(has_primer_pairs(design())); write_bsp_pairs(design(), file, sep = ",") }
+    filename = function() { shiny::req(has_primer_pairs(design())); sprintf("%s_primers.csv", design_label(design())) },
+    contentType = "text/csv",
+    content = function(file) { shiny::req(has_primer_pairs(design())); write_order_sheet(design(), file) }
   )
   output$download_order_sheet <- shiny::downloadHandler(
-    filename = function() { rank <- selected_rank(); sprintf("%s_order.tsv", pair_names(design(), design_pairs(design(), rank))) },
+    filename = function() { rank <- selected_rank(); sprintf("%s_primers.csv", pair_names(design(), design_pairs(design(), rank))) },
+    contentType = "text/csv",
     content = function(file) { rank <- selected_rank(); write_order_sheet(design(), file, ranks = rank) }
   )
   output$download_amplicons <- shiny::downloadHandler(

@@ -4,6 +4,7 @@
 ^\.github$
 ^dist$
 ^implementation_specs\.md$
+^GUI_LAYOUT_REVIEW\.md$
 ^app\.R$
 ^\.Rbuildignore$
 ^data-raw$

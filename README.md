@@ -1,17 +1,10 @@
 # Promoter Primer Mapper
 
-An R package with a local Shiny GUI for designing **bisulfite-sequencing PCR (BSP)** primers for gene promoters. It selects transcript-derived transcription start sites (TSSs) and extracts a transcription-oriented promoter sequence. An interactive CpG map shows the promoter's CpG sites and CpG islands. The app designs ranked BSP primer pairs on the bisulfite-converted template for every CpG island, or for a range or island you pick on the map. It checks the pairs for off-target products in the converted genome, and exports an oligo order sheet together with amplicon references for analysing the sequencing reads.
+An R package with a local Shiny GUI for designing bisulfite-sequencing PCR (BSP) primers for gene promoters. It selects transcript-derived transcription start sites and extracts a transcription-oriented promoter sequence. The extracted sequence is scanned to identify CpG sites and CpG islands. Ranked BSP primer pairs on the bisulfite-converted template are generated for every CpG island or for a range or island you select. Finally, the pairs are checked for off-target products in the bisulfite-converted genome.
 
 ## Run the app
 
-Choose one of the following paths:
-
-| Where | Direct R installation | Apptainer/Singularity container |
-|---|---|---|
-| Your computer | Use when R and the required tools can be installed locally. | Use when you want a self-contained, reproducible environment. |
-| HPC | Use the cluster's R and software modules or Conda environment. | Usually the simplest HPC option when Apptainer/Singularity is available. |
-
-The app listens on `127.0.0.1` by default. Keep that setting on shared systems and access an HPC job through an SSH tunnel.
+The tool can be used locally on toyr computer or on a cluster. The app listens on `127.0.0.1` by default. Keep that setting on shared systems and access an HPC job through an SSH tunnel.
 
 ### Local computer: direct R installation
 
@@ -54,7 +47,7 @@ R --vanilla -e 'promoterPrimerMapper::run_app()'
 
 Open <http://127.0.0.1:3838> if a browser does not open automatically. You may instead install a published release asset with `R CMD INSTALL promoterPrimerMapper_<version>.tar.gz`.
 
-The app looks for `primer3_core` and `bowtie2` on `PATH`. If necessary, supply their full paths in the GUI under **External tools**, or before launching R:
+The app looks for `primer3_core` and `bowtie2` on `PATH`. If necessary, set the Primer3 path under **Reference and gene → Design tool settings**, and the Bowtie2 path under **Check specificity → Alignment tool and criteria**. You can also set their paths in your R session before calling `run_app()`:
 
 ```r
 options(
@@ -65,11 +58,11 @@ options(
 
 ### HPC: direct R installation
 
-Run the app in an interactive compute allocation, not on a login node. The module names and scheduler commands below are examples; use your cluster's documented equivalents.
+Run the PromoterPrimerMapper in an interactive compute allocation. Use your cluster's equivalents for module names and scheduler commands below.
 
 ```bash
 # On the login node: obtain an interactive allocation.
-salloc --time=02:00:00 --mem=8G --cpus-per-task=2
+salloc --time=02:00:00 --mem=8G --cpus-per-task=2 --account=user_id
 
 # On the allocated compute node: load locally provided software.
 module load R primer3 bowtie2 bismark
@@ -111,7 +104,7 @@ apptainer run --bind /path/to/genomes promoterPrimerMapper.sif
 apptainer run --bind /path/to/genomes promoterPrimerMapper.sif --port 4000
 ```
 
-Open <http://127.0.0.1:3838> (or port `4000`) in your browser. Leave **External tools** empty: the image already places `primer3_core` and `bowtie2` on `PATH`.
+Open <http://127.0.0.1:3838> (or port `4000`) in your browser. Leave the Primer3 and Bowtie2 path fields empty: the image already places both tools on `PATH`.
 
 Prepare a Bismark index with the same image when you need specificity checking:
 
@@ -126,7 +119,7 @@ Copy a previously built `.sif` to the cluster if the cluster prohibits image bui
 
 ```bash
 # On the login node
-salloc --time=02:00:00 --mem=8G --cpus-per-task=2
+salloc --time=02:00:00 --mem=8G --cpus-per-task=2 --account=user_id
 
 # On the allocated compute node
 apptainer run --bind /project,/scratch promoterPrimerMapper.sif
@@ -144,34 +137,35 @@ Open <http://127.0.0.1:3838> in your local browser. Do not use `--host 0.0.0.0` 
 
 ## Workflow in the GUI
 
-The sidebar takes you from reference files to an extracted promoter. Everything else is on one screen.
+Start in **Reference and gene** with your reference files and gene of interest. The setup sidebar collapses after extraction and can be reopened with its toggle. The map, target controls, pair review, specificity, and exports share one continuous workspace.
 
 1. **Reference files.** Give paths to a GTF/GFF annotation, a reference FASTA and its `.fai` index. A GFF3 file works too: `mRNA` records are linked to their gene through `Parent`. The annotation is cached between gene searches.
 2. **Gene and TSS.** Search by gene ID or gene name and pick a TSS.
-3. **Extract sequence.** Set the bases to extract upstream and downstream of the TSS. Extraction immediately designs primers for **all CpG islands** (see [How targets are chosen](#how-targets-are-chosen)).
+3. **Extract and design.** Set the bases to extract upstream and downstream of the TSS. Extraction immediately designs primers for all CpG islands (see [How targets are chosen](#how-targets-are-chosen)). File and tool readiness messages explain missing prerequisites.
 
-**Promoter CpG map.** The map shows every CpG (red), the predicted CpG islands (green bars, labelled `CGI1`, `CGI2`, …) and the TSS. The bottom axis gives TSS-relative positions and the top axis genomic coordinates.
+**Promoter CpG map.** The map shows every CpG, the predicted CpG islands (bars labelled `CGI1`, `CGI2`, …) and the TSS. The bottom axis provides TSS-relative positions and the top axis genomic coordinates.
 - **Hover** to read the TSS-relative, sequence and genomic position and the base under the cursor.
-- **Drag** across the map to select a range. The range fills the *From*/*To* boxes, which you can also type into, and is described below the map: TSS-relative, sequence and genomic interval, length, CpG count, GC % and overlapping islands. **Use selection as BSP target** makes it the design target.
+- **Drag** across the map to select a range. Choose **Selected range** under Target to reveal the *From*/*To* fields and range summary; the fields can also be typed into. The summary includes TSS-relative, sequence and genomic interval, length, CpG count, GC % and overlapping islands. Range values are preserved when switching target modes.
 - **Click** an island bar to make that island the target.
-- The island table lists every predicted island with its interval, CpG count, GC %, CpG observed/expected ratio and the window that will be designed.
+- **Zoom** to the proposed target or selected pair, or restore the full promoter. **Clear selection** removes the range highlight and restores all-island mode.
+- **CpG island statistics** expands the table of intervals, CpG counts, GC %, CpG observed/expected ratios and design windows.
 
 **BSP primer design.**
 - **Template strand:** sense, antisense or both.
 - **Target:** *All CpG islands* (default), *Selected CpG island* (choose from the list of all islands), or *Selected range*. The targets about to be designed are listed and shaded on the map.
-- **Parameters.** Every design parameter (below) is in the collapsible panels, pre-filled with the defaults from `bsp_primer_params()`. **Reset parameters to defaults** restores them.
+- **Parameters.** Every design parameter (below) is under **Advanced design parameters**, pre-filled with defaults from `bsp_primer_params()`. **Reset parameters** restores them. Invalid settings are shown near the controls and disable design until corrected.
 - **Design BSP primers** re-runs the design with the current target and parameters.
 
 **Primer pairs.**
-- **Tables.** Results show the pairs found per target and a ranked pair table.
+- **Compare.** Filter by target or strand and sort by rank, score, product size, or CpG count.
 - **Targets without a pair** get candidate counts for each filtering stage, the main reasons candidates were rejected, and a hint on what to change. For example, *allow 1–2 CpGs per primer* where CpG-dense islands leave no CpG-free primer site.
-- **Selected pair.** Selecting a pair shows per-primer statistics, draws the amplicon on the map, and shows the converted template with the primers, CpGs and TSS highlighted.
-- **Downloads:**
+- **Selected pair.** Choose a row's pair button or use the dropdown to update the map, oligo inspector, and selected-pair exports together. Each oligo has a copy action, basic metrics, and thermodynamic details. Sequence review defaults to the amplicon with short flanks; **Show full promoter** expands it.
+- **Export results** groups downloads by scope:
   - **Primers CSV** for all pairs, or **Selected primers CSV** for the selected pair, with one row per oligo and names like `GENE_CGI1_BSP3_F` / `_R`;
   - amplicon reference FASTA (genomic, converted-unmethylated and converted-methylated) for BiQ Analyzer, QUMA or Bismark.
-- **Check specificity** aligns the best pairs of each target to a Bismark-prepared genome and reports off-target products (see below).
+- **Check specificity** has its own genome-folder and alignment settings. Outcomes distinguish unchecked pairs, off-target products, missing on-target products, and specificity within checked criteria. Completed criteria remain visible when settings change (see below).
 
-**Extracted sequence** (collapsed): the TSS record, the sequence and the four FASTA downloads.
+**Extracted promoter and FASTA variants** (under exports): the sequence and four FASTA downloads. Transcript records are under **Transcript details** in the setup sidebar.
 
 Primer CSVs begin with metadata lines, each prefixed with `#`, followed by an ordinary CSV column header and data rows. The columns are:
 
@@ -216,26 +210,26 @@ plot_cpg_map(promoter, design, rank = 1)
 
 Every amplicon contains its whole target, and the primers lie outside it, so all CpGs in the target are read.
 
-- **CpG islands.** Islands are predicted with Gardiner-Garden/Frommer-style criteria: 100 bp windows with GC ≥ 50 % and CpG observed/expected ≥ 0.6, merged, at least 200 bp long. Each island gives one target (`CGI1`, `CGI2`, …).
-  - An island no longer than the *target width* (mid product size minus two maximum-length primers; 265 bp with the defaults) is targeted whole.
+- CpG islands are predicted with Gardiner-Garden/Frommer criteria: 100 bp windows with GC ≥ 50 % and CpG observed/expected ≥ 0.6, merged, at least 200 bp long. Each island gives one target (`CGI1`, `CGI2`, …).
+  - An island no longer than the target width (mid product size minus two maximum-length primers; 265 bp with the defaults) is targeted whole.
   - A longer island gets a window of that width, centred on the TSS when the island contains it and on the island centre otherwise. To cover another part of a long island, select it as a range.
-- **Non-island fallback.** In *All CpG islands* mode, if no island yields a primer pair, or the sequence has no island, the densest CpG clusters outside islands are designed instead (`NC1`, `NC2`, …).
+- In *All CpG islands* mode, if no island yields a primer pair, or the sequence has no island, the densest CpG clusters outside islands are designed instead (`NC1`, `NC2`, …).
   - Windows of the target width start at each non-island CpG and stop before the next island.
   - Each window is trimmed to its first and last CpG and must hold at least `min_cpg_in_amplicon` CpGs.
   - The windows with the most CpGs are taken, without overlap and nearest the TSS on ties, up to `fallback_targets`.
-- **Selected range.** Any TSS-relative range up to `product_size_max − 2 × primer_size_min` bp (406 bp with the defaults). Narrower ranges leave more room for primers and give more pairs.
+- Any TSS-relative range up to `product_size_max − 2 × primer_size_min` bp (406 bp with the defaults). Narrower ranges leave more room for primers and give more pairs.
 
 ## How primers are designed
 
-1. **Template.** The extracted sequence (sense) or its reverse complement (antisense) is converted in silico. Every non-CpG `C` becomes `T`. CpG cytosines are methylation-dependent and are tracked separately.
-2. **Candidate enumeration.** Every primer footprint of allowed length on either side of the target is tested against the bisulfite rules:
+1. The extracted sequence (sense) or its reverse complement (antisense) is bisulfite-converted in silico. Every non-CpG `C` becomes `T`. CpG cytosines are methylation-dependent and are tracked separately.
+2. Every primer footprint of allowed length on either side of the target is tested against the bisulfite rules:
    - no CpG cytosine under the primer, unless `max_cpg_in_primer` > 0; allowed CpGs must be in the 5′ half and are written as degenerate `Y` (forward) or `R` (reverse);
    - at least `min_converted_c` converted cytosines under the primer, so only fully converted DNA is amplified;
    - a converted cytosine within `three_prime_window` bases of the 3′ end;
    - no run longer than `max_poly_non_t` of a single A, C or G base.
-3. **Primer3 scoring.** Surviving oligos are checked with `primer3_core` (`check_primers`) for Tm, GC, homopolymers, self-dimers and hairpins. The best `candidates_per_side` per side are kept.
-4. **Pairing.** Pairs must fit the product size range and the Tm difference limit, and enclose at least `min_cpg_in_amplicon` CpGs. Each primer site must occur only once in its amplicon, so primers in tandem repeats are dropped. A shortlist is re-checked with Primer3 for cross-dimers.
-5. **Ranking.** Pairs are ranked by Primer3 pair penalty plus Tm difference. No more than `max_primer_reuse` reported pairs may share a primer site; primers whose 3′ ends lie within half the minimum primer length count as one site.
+3. Filtered oligos are checked with `primer3_core` (`check_primers`) for Tm, GC, homopolymers, self-dimers and hairpins. The best `candidates_per_side` per side are kept.
+4. Pairs must fit the product size range and the Tm difference limit, and enclose at least `min_cpg_in_amplicon` CpGs. Each primer site must occur only once in its amplicon, so primers in tandem repeats are dropped. A shortlist is re-checked with Primer3 for cross-dimers.
+5. Pairs are ranked by Primer3 pair penalty plus Tm difference. No more than `max_primer_reuse` reported pairs may share a primer site; primers whose 3′ ends lie within half the minimum primer length count as one site.
 
 | Parameter | Default | Why |
 |---|---|---|
@@ -265,15 +259,15 @@ bismark_genome_preparation --bowtie2 /path/to/genome_folder   # folder containin
 
 Then set **Bismark genome folder** in the GUI, or call `check_bsp_specificity(design, "/path/to/genome_folder")`.
 
-- **Alignment.** Each primer is aligned with Bowtie2 to both converted strands (Bismark's CT and GA indexes), with no gaps and up to `max_mismatch` mismatches.
-- **Priming hits.** A hit counts only if none of its mismatches falls in the 3′-terminal three bases.
-- **Predicted products.** Any forward hit followed by a reverse hit on the same converted strand within `max_product` bp is a predicted product. Products formed by a single primer are included.
-- **Pairs checked.** The best `top_n` pairs of each target are checked.
-- **Output.** The pair table gains `n_hits_left`, `n_hits_right`, `n_products`, `on_target`, `n_offtarget_products` and `specific`.
+1. Each primer is aligned with Bowtie2 to both converted strands (Bismark's CT and GA indexes), with no gaps and up to `max_mismatch` mismatches.
+2. A hit counts only if none of its mismatches falls in the 3′-terminal three bases.
+3. Any forward hit followed by a reverse hit on the same converted strand within `max_product` bp is a predicted product. Products formed by a single primer are included.
+4. The best `top_n` pairs of each target are checked.
+5. The pair table gains `n_hits_left`, `n_hits_right`, `n_products`, `on_target`, `n_offtarget_products` and `specific`.
 
 ## Checking published primers from R
 
-The GUI designs primers itself. To check primers designed elsewhere (MethPrimer, Primer3, a publication), map their positions on the extracted sequence back to the genome from R:
+To check primers designed elsewhere (MethPrimer, Primer3, a publication), map their positions on the extracted sequence back to the genome from R:
 
 ```r
 primers <- parse_primer_output("
@@ -283,10 +277,10 @@ Product size: 226")
 map_primer_coordinates(primers, promoter, sequence_variant = "bisulfite_requested")
 ```
 
-- **Right-primer convention.** Primer3 and MethPrimer report a right primer's `Start` as its **5′ end**, which is its highest position. The right primer above therefore covers positions 1272–1299, giving the reported 226 bp product. Use `right_start = "leftmost"` only for tools that report the lowest position.
-- **Product-size check.** When a `Product size` line is present, the mapped amplicon must match it.
-- **Sequence check.** When primer sequences are present, each is checked against the converted template at its mapped position. The `sequence_match` column reports `converted`, `converted (methylated CpG)`, `unconverted` or `mismatch`.
-- **Sequence variant.** `sequence_variant` names the sequence the primers were designed on (requested, complementary, or either bisulfite variant). Positions on the complementary sequences are flipped back before mapping.
+- Primer3 and MethPrimer report a right primer's `Start` as its 5′ end, which is its highest position. The right primer above therefore covers positions 1272–1299, giving the reported 226 bp product. Use `right_start = "leftmost"` only for tools that report the lowest position.
+- When a `Product size` line is present, the mapped amplicon must match it.
+- When primer sequences are present, each is checked against the converted template at its mapped position. The `sequence_match` column reports `converted`, `converted (methylated CpG)`, `unconverted` or `mismatch`.
+- `sequence_variant` names the sequence the primers were designed on (requested, complementary, or either bisulfite variant). Positions on the complementary sequences are flipped back before mapping.
 
 ## Coordinates and strands
 
@@ -295,12 +289,12 @@ map_primer_coordinates(primers, promoter, sequence_variant = "bisulfite_requeste
   - For `+` strand genes, position 1 is `region_start`.
   - For `-` strand genes, the sequence is reverse-complemented and position 1 is `region_end`.
   - Primer intervals are reported in ascending genomic order.
-- **TSS-relative positions** follow the promoter convention: the TSS is `+1`, the base upstream is `-1`, and there is no position 0.
-- **TSS definition.** The TSS is the transcript start on `+` and the transcript end on `-`. Transcripts sharing the same gene, scaffold, strand and TSS are collapsed into one selectable TSS, keeping all transcript IDs.
-- **Bisulfite strands.** The two strands are no longer complementary after conversion, so each assay targets one of them:
+- TSS-relative positions follow the promoter convention: the TSS is `+1`, the base upstream is `-1`, and there is no position 0.
+- The TSS is the transcript start on `+` and the transcript end on `-`. Transcripts sharing the same gene, scaffold, strand and TSS are collapsed into one selectable TSS, keeping all transcript IDs.
+- The two strands are no longer complementary after conversion, so each assay targets one of them:
   - The *sense* template is the gene's own strand; *antisense* is the opposite strand.
   - Results also report the Bismark label of the genomic strand: `OT` (original top, `+`) or `OB` (original bottom, `-`).
-- **FASTA conversion.** The four FASTA downloads convert every `C` to `T`. `bisulfite_convert(x, cpg = "methylated")` keeps CpG cytosines.
+- The two converted promoter FASTA downloads replace every `C` with `T`; the sense and antisense FASTA downloads retain the original bases. `bisulfite_convert(x, cpg = "methylated")` keeps CpG cytosines.
 
 ## Tests
 
